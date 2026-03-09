@@ -1,0 +1,4 @@
+venv
+data/country_data
+
+__pycache__
