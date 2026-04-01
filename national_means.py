@@ -10,6 +10,8 @@ import pandas as pd
 
 output_path = Path("outputs/proportional_grazing_stocking_gap.csv")
 
+MODIFIER = 0.75 # to convert from 100% gap closure to 75% gap closure, as per Strassburg et al. 2020
+
 strassburg_pasture_gap_data = Path("data/rasters/pixel_proportion_restorable_pasture_75perc_gap_closure.tif") # yield / max yield, so 0-1
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -58,7 +60,6 @@ def process_country(country_geom, weights, value_dataset, out_shape, transform):
 
         return mean_value, mean_sem, int(pixel_count), physical_area
 
-
 output_rows = []
 
 if not output_path.parent.is_dir():
@@ -72,8 +73,11 @@ with rasterio.open(strassburg_pasture_gap_data) as gap_src:
     gap_data = gap_src.read(1)
     out_shape = gap_data.shape
     
-    gap_data = np.where(np.isnan(gap_data), -9999, gap_data)
-    gap_data = np.where(gap_data == -9999, 0, gap_data) # this is fine for this purpose
+    nodata = gap_src.nodata
+    if nodata is not None:
+        gap_data = np.where(gap_data == nodata, np.nan, gap_data).astype(np.float32)
+    else:
+        gap_data = gap_data.astype(np.float32)
 
     area_data = np.full_like(gap_data, gap_src.res[0] * gap_src.res[1] / 1e6) # km2 per pixel (works because data is EA)
     
@@ -88,6 +92,10 @@ with rasterio.open(strassburg_pasture_gap_data) as gap_src:
         mean_gap, sem_gap, pixel_count, physical_area = process_country(
             country_geom, area_data, gap_data, out_shape, transform
         )
+
+        if MODIFIER is not None:
+            mean_gap = mean_gap / MODIFIER
+            sem_gap = sem_gap / MODIFIER 
 
         if np.isnan(mean_gap):
              print(f"Warning: No valid data for country {iso}")
