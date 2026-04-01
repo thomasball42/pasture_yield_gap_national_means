@@ -10,7 +10,7 @@ import pandas as pd
 
 output_path = Path("outputs/proportional_grazing_stocking_gap.csv")
 
-MODIFIER = 0.75 # to convert from 100% gap closure to 75% gap closure, as per Strassburg et al. 2020
+MODIFIER = 0.75 # to convert from 75% gap closure to 100% gap closure, as per Strassburg et al. 2020
 
 strassburg_pasture_gap_data = Path("data/rasters/pixel_proportion_restorable_pasture_75perc_gap_closure.tif") # yield / max yield, so 0-1
 
